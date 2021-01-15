@@ -164,23 +164,3 @@ def prep_runfolders(dbname,query):
             out.write(dir)
         os.chdir(prevdir)
     return print('Done')
-
-def ase_db_to_df(ase_db,clean=None,col_numeric=None,col_bool=None):
-    import numpy as np
-    import pandas as pd
-    csv = !ase db $ase_db -c ++ -L 0 --csv
-    df = pd.DataFrame(data=csv)[0].str.split(', ',expand=True)
-    df.columns = df.loc[0].values
-    df.drop(0,inplace=True)
-    df.reset_index(inplace=True)
-    df = df.replace('None',np.nan)
-    if clean is None:
-        df = df.drop(['index'], axis=1)
-    else:
-        df = df.drop(['index']+clean, axis=1)
-    if col_numeric is not None:
-        for i in col_numeric:
-            df[i] = pd.to_numeric(df[i])
-    if col_bool is not None:
-        df[col_bool] = df[col_bool].astype('bool')
-    return df
