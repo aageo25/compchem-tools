@@ -36,3 +36,30 @@ def plan_avg_ase(filename='LOCPOT'):
     else:
         avg_c = [np.average(locpot.chg[0][:,:,i]) for i in range(0,np.shape(locpot.chg)[3])]
     return avg_c
+
+def get_site_dcenter(vaspdos,site):
+    """
+    Fermi energy should be set to zero when defining vaspdos.
+    Returs d-band center for spin up and down
+    """
+    from numpy import where,trapz
+    
+    dcenter = {'up': 0.0,'down': 0.0}
+    for spin in dcenter.keys():
+        # only energies below the fermi level
+        e = vaspdos.energy[vaspdos.energy < 0]
+        de = e[1] - e[0]
+        # collect d states
+        if spin == 'up':
+            d = vaspdos.site_dos(site,8)[:len(e)]
+            for i in range(10,18,2):
+                d += vaspdos.site_dos(site,i)[:len(e)]
+        elif spin == 'down':
+            d = vaspdos.site_dos(site,9)[:len(e)]
+            for i in range(11,19,2):
+                d += vaspdos.site_dos(site,i)[:len(e)]
+        # calculate d-band center
+        num = trapz(d * e, dx=de)
+        den = trapz(d, dx=de)
+        dcenter[spin] = num / den
+    return dcenter
