@@ -63,3 +63,61 @@ def get_site_dcenter(vaspdos,site):
         den = trapz(d, dx=de)
         dcenter[spin] = num / den
     return dcenter
+
+def site_pdos(atoms,vaspdos):
+    from ase.calculators.vasp import Vasp,VaspDos
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    # collect the necessary information
+    calc = Vasp(restart=True)
+    atoms = calc.get_atoms()
+    vaspdos = VaspDos(efermi=atoms.calc.fermi)
+    
+    colors = plt.get_cmap("tab10")
+    
+    # total dos
+    energy = vaspdos.energy
+    dos_up = vaspdos.dos[0]
+    dos_down = vaspdos.dos[1]*(-1)
+    
+    # build the dictonary
+    pdos = {}
+    for atom in set(atoms.get_chemical_symbols()):
+        pdos[atom] = {}
+        for spin in ['up', 'down']:
+            pdos[atom][spin] = np.zeros(energy.shape)
+    
+    # collect information from DOSCAR
+    for symb in pdos.keys():
+        for sp in pdos[symb].keys():
+            for site in [atom.index for atom in atoms if atom.symbol == symb]:
+                for orb in ["s", "py", 'pz', 'px', "dxy", "dyz", "dz2", "dxz", "dx2"]:
+                    pdos[symb][sp] += vaspdos.site_dos(atom=site,orbital=f'{orb}-{sp}')
+    
+    # plot
+    fig, ax = plt.subplots()
+    # total
+    ax.plot(energy, dos_up, label='Total', color='black')
+    ax.plot(energy, dos_down, color='black')
+    # element projected
+    for index, symb in enumerate(pdos.keys()):
+        for sp in pdos[symb].keys():
+            if sp == 'up':
+                ax.plot(energy, pdos[symb][sp], label=f'{symb}', color=colors(index))
+                ax.fill_between(energy, pdos[symb][sp], color=colors(index), alpha=0.3)
+            elif sp == 'down':
+                ax.plot(energy, -pdos[symb][sp], color=colors(index))
+                ax.fill_between(energy, -pdos[symb][sp], color=colors(index), alpha=0.3)
+    
+    # Fermi energy
+    ax.axvline(0, ls='--', color='gray', label="Fermi energy")
+    
+    # Final adjustments
+    ax.set_title('Element Projected DOS')
+    ax.set_xlabel('Energy (eV)')
+    ax.set_ylabel('DOS (a.u.)')
+    ax.legend()
+    
+    # return the graph
+    return plt
