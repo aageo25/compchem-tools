@@ -70,8 +70,7 @@ def site_pdos(atoms,vaspdos):
     import matplotlib.pyplot as plt
     
     # collect the necessary information
-    calc = Vasp(restart=True)
-    atoms = calc.get_atoms()
+    calc = atoms.calc()
     vaspdos = VaspDos(efermi=atoms.calc.fermi)
     
     colors = plt.get_cmap("tab10")
