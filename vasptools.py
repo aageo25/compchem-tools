@@ -99,7 +99,7 @@ def site_pdos(atoms,vaspdos):
     ax.plot(energy, dos_up, label='Total', color='black')
     ax.plot(energy, dos_down, color='black')
     # element projected
-    for index, symb in enumerate(pdos.keys()):
+    for index, symb in enumerate(sorted(pdos.keys())):
         for sp in pdos[symb].keys():
             if sp == 'up':
                 ax.plot(energy, pdos[symb][sp], label=f'{symb}', color=colors(index))
